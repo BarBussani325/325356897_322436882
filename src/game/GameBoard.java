@@ -1,14 +1,13 @@
 package game;
 
+import interfaces.MessageCallback;
 import tiles.Empty;
 import tiles.Tile;
 import tiles.Wall;
 import units.*;
 
-import interfaces.Visitor;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class GameBoard {
     private Tile[][] board;
@@ -16,11 +15,12 @@ public class GameBoard {
     private List<Enemy> enemies;
     private int rows;
     private int cols;
+    private MessageCallback messageCallback;
 
-    public GameBoard() {
-        enemies = new ArrayList<>();
+    public GameBoard(MessageCallback callback) {
+        this.enemies = new ArrayList<>();
+        this.messageCallback = callback;
     }
-
 
     public void loadLevel(List<String> levelData, Player selectedPlayer) {
         this.rows = levelData.size();
@@ -28,6 +28,7 @@ public class GameBoard {
         this.board = new Tile[rows][cols];
         this.enemies.clear();
         this.player = selectedPlayer;
+        this.player.setMessageCallback(this.messageCallback);
 
         for (int i = 0; i < rows; i++) {
             String row = levelData.get(i);
@@ -38,7 +39,7 @@ public class GameBoard {
                 switch (charTile) {
                     case '@':
                         player.setPosition(j, i);
-                        tile = new Empty(j, i);  // overwritten later
+                        tile = player; // Place the player directly
                         break;
                     case '#':
                         tile = new Wall(j, i);
@@ -47,124 +48,57 @@ public class GameBoard {
                         tile = new Empty(j, i);
                         break;
                     default:
-                        Enemy enemy = EnemyFactory.createEnemy(charTile, j, i);
+                        Enemy enemy = EnemyFactory.createEnemy(charTile, j, i, this.messageCallback);
                         if (enemy != null) {
                             enemies.add(enemy);
                             tile = enemy;
                         } else {
-                            tile = new Empty(j, i);  // fallback
+                            tile = new Empty(j, i); // Fallback for unknown characters
                         }
                         break;
                 }
-
                 board[i][j] = tile;
             }
         }
-        // Put player after parsing
-        board[player.getY()][player.getX()] = player;
     }
 
-//    // You'll need to parse the level.txt files to populate the boahis method will be responsible for loading levels from filesrd
-//    public void loadLevel(List<String> levelData, Player selectedPlayer) {
-//        this.rows = levelData.size();
-//        this.cols = levelData.get(0).length();
-//        this.board = new Tile[rows][cols];
-//        this.enemies.clear(); // Clear enemies from previous level
-//
-//        this.player = selectedPlayer; // Set the player for this level
-//
-//        for (int i = 0; i < rows; i++) {
-//            String row = levelData.get(i);
-//            for (int j = 0; j < cols; j++) {
-//                char charTile = row.charAt(j);
-//                Tile newTile;
-//
-//                switch (charTile) {
-//                    case '@':
-//                        player.setPosition(j, i); // Set player's position
-//                        newTile = new Empty(j, i); // Player starts on an empty tile
-//                        break;
-//                    case '#':
-//                        newTile = new Wall(j, i);
-//                        break;
-//                    case 'u':
-//                        newTile = new Empty(j, i);
-//                        break;
-//                    // Add cases for different enemy types here based on their characters
-//                    // Example:
-//                    case 's': // Lannister Soldier
-//                        Enemy soldier = new Monster('s', "Lannister Soldier", 80, 8, 3, 25, 3, j, i);
-//                        enemies.add(soldier);
-//                        newTile = soldier;
-//                        break;
-//                    case 'k': // Lannister Knight
-//                        Enemy knight = new Monster('k', "Lannister Knight", 200, 14, 8, 50, 4, j, i);
-//                        enemies.add(knight);
-//                        newTile = knight;
-//                        break;
-//                    // ... and so on for all other enemies including traps and bosses
-//                    case 'B': // Bonus Trap
-//                        Enemy bonusTrap = new Trap('B', "Bonus Trap", 1, 1, 1, 250, 1, 5, j, i);
-//                        enemies.add(bonusTrap);
-//                        newTile = bonusTrap;
-//                        break;
-//                    case 'M': // The Mountain (now a Boss)
-//                        Enemy mountain = new org.example.units.enemies.Boss('M', "The Mountain", 1000, 60, 25, 500, 6, 5, j, i);
-//                        enemies.add(mountain);
-//                        newTile = mountain;
-//                        break;
-//                    // ... add Queen Cersei and Night's King as Bosses too
-//                    default:
-//                        newTile = new Empty(j, i); // Fallback
-//                        break;
-//                }
-//                board[i][j] = newTile;
-//            }
-//        }
-//        // Place player on the board after initialization (overwriting the '.' where '@' was)
-//        board[player.getY()][player.getX()] = player;
-//    }
-
-    //Method to try and move a unit
     public void tryMoveUnit(Unit unit, int newX, int newY) {
-        // Check bounds
-        if (newX < 0 || newX >= cols || newY < 0 || newY >= rows) {
-            System.out.println(unit.getName() + " cannot move out of bounds.");
+        if (newX < 0 || newX >= this.cols || newY < 0 || newY >= this.rows) {
             return;
         }
-
-        Tile targetTile = board[newY][newX];
-        Tile currentTile = board[unit.getY()][unit.getX()];
-
-        // Use the visitor pattern for interaction
-        unit.accept(targetTile);
-
-        // If the unit moved, update the board
-        if (unit.getX() == newX && unit.getY() == newY) { // Means the accept method updated the unit's position
-            board[newY][newX] = unit; // Place unit in new spot
-            board[currentTile.getY()][currentTile.getX()] = new Empty(currentTile.getX(), currentTile.getY()); // Old spot becomes empty
-        }
+        Tile destinationTile = getTile(newX, newY);
+        unit.encounter(destinationTile, this);
     }
 
-    public void removeUnit(Unit unit) {
-        if (unit instanceof Enemy) {
-            enemies.remove((Enemy) unit);
-            // Replace the enemy's position with an empty tile
-            board[unit.getY()][unit.getX()] = new Empty(unit.getX(), unit.getY());
-        }
-        // If player is removed, game over
-        if (unit instanceof Player) {
-            board[unit.getY()][unit.getX()] = new Tile('X', unit.getX(), unit.getY()); // Mark player's death spot
-            // Trigger game over state
-        }
+    public void swapPositions(Unit unit, Empty emptyTile) {
+        int unitOldX = unit.getX();
+        int unitOldY = unit.getY();
+        int emptyX = emptyTile.getX();
+        int emptyY = emptyTile.getY();
+
+        board[unitOldY][unitOldX] = emptyTile;
+        board[emptyY][emptyX] = unit;
+
+        unit.setPosition(emptyX, emptyY);
+        emptyTile.setPosition(unitOldX, unitOldY);
     }
 
-    // getEnemiesInRange boardGame
-    // Utility method to get enemies within a certain range
-    public List<Enemy> getEnemiesInRange(int centerX, int centerY, int range) {
-        return enemies.stream()
-                .filter(enemy -> getDistance(new Tile(' ', centerX, centerY), enemy) < range)
-                .collect(Collectors.toList());
+    public void swapPositions(Unit unit1, int x, int y) {
+        int unit1OldX = unit1.getX();
+        int unit1OldY = unit1.getY();
+
+        Tile tile = board[y][x];
+
+        board[unit1OldY][unit1OldX] = tile;
+        board[y][x] = unit1;
+
+        unit1.setPosition(x, y);
+        tile.setPosition(unit1OldX, unit1OldY);
+    }
+    
+    public void removeEnemy(Enemy enemy) {
+        enemies.remove(enemy);
+        board[enemy.getY()][enemy.getX()] = new Empty(enemy.getX(), enemy.getY());
     }
 
     public Player getPlayer() {
@@ -179,32 +113,37 @@ public class GameBoard {
         if (x >= 0 && x < cols && y >= 0 && y < rows) {
             return board[y][x];
         }
-        return null; // Out of bounds
+        return null;
     }
 
-    public int getRows() {
-        return rows;
+    public void sendMessage(String message) {
+        if(messageCallback != null) {
+            messageCallback.send(message);
+        }
     }
-
-    public int getCols() {
-        return cols;
-    }
-
-
-
-    // Utility method to calculate distance
-    public double getDistance(Tile t1, Tile t2) {
-        return Math.sqrt(Math.pow(t1.getX() - t2.getX(), 2) + Math.pow(t1.getY() - t2.getY(), 2));
-    }
-
-
 
     public void printBoard() {
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                System.out.print(board[i][j].toString());
+                sb.append(board[i][j].toString());
             }
-            System.out.println();
+            sb.append("\n");
         }
+        sendMessage(sb.toString());
+    }
+
+    public double getDistance(Unit u1, Unit u2) {
+        return Math.sqrt(Math.pow(u1.getX() - u2.getX(), 2) + Math.pow(u1.getY() - u2.getY(), 2));
+    }
+
+    public List<Enemy> getEnemiesInRange(Unit unit, int range) {
+        List<Enemy> enemiesInRange = new ArrayList<>();
+        for (Enemy enemy : enemies) {
+            if (getDistance(unit, enemy) <= range) {
+                enemiesInRange.add(enemy);
+            }
+        }
+        return enemiesInRange;
     }
 }

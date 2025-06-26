@@ -2,6 +2,8 @@ package tiles; // Recommended package structure based on your screenshots
 
 import game.Position;
 import interfaces.Visited;
+import interfaces.Visitor;
+import game.GameBoard;
 
 
 public abstract class Tile implements Visited{
@@ -30,6 +32,12 @@ public abstract class Tile implements Visited{
         position.setX(x);
         position.setY(y);
     }
+
+    public Position getPosition() {
+        return this.position;
+    }
+
+    public abstract void accept(Visitor visitor, GameBoard board);
 
     @Override
     public String toString() {

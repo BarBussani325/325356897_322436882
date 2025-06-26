@@ -3,6 +3,7 @@ package tiles;
 import interfaces.Visitor;
 import units.Enemy;
 import units.Player;
+import game.GameBoard;
 
 public class Wall extends Tile {
 
@@ -10,7 +11,7 @@ public class Wall extends Tile {
         super('#', x, y);
     }
 
-    public void accept(Visitor v){
-        v.visit(this);
+    public void accept(Visitor v, GameBoard board){
+        v.visit(this, board);
     }
 }

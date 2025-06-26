@@ -6,7 +6,7 @@ import game.GameBoard;
 import java.util.List;
 import java.util.Random;
 
-public class Mage extends Player /*implements HeroicUnit*/ {
+public class Mage extends Player {
     private int manaPool;
     private int currentMana;
     private int manaCost;
@@ -18,7 +18,7 @@ public class Mage extends Player /*implements HeroicUnit*/ {
                 int manaPool, int manaCost, int spellPower, int hitsCount, int abilityRange, int x, int y) {
         super(name, healthPool, attackPoints, defensePoints, x, y);
         this.manaPool = manaPool;
-        this.currentMana = manaPool;
+        this.currentMana = manaPool/4;
         this.manaCost = manaCost;
         this.spellPower = spellPower;
         this.hitsCount = hitsCount;
@@ -26,52 +26,52 @@ public class Mage extends Player /*implements HeroicUnit*/ {
     }
 
     @Override
-    public void levelUp() {
-        super.levelUp();
+    public String applyLevelUpBonuses() {
         this.manaPool += (25 * this.level);
         this.currentMana = Math.min(currentMana + manaPool / 4, manaPool);
         this.spellPower += (10 * this.level);
+        return String.format(" +%d maximum mana, +%d spell power.\n", (25*this.level), (10*this.level));
     }
 
     @Override
-    public void castAbility(GameBoard board) {
+    public void OnCastAbility(GameBoard board) {
         if (currentMana < manaCost) {
-            System.out.println(getName() + " cannot cast Blizzard, not enough mana. Current mana: " + currentMana + "/" + manaPool + ".");
+            if (messageCallback != null)
+                messageCallback.send(getName() + " tried to cast Blizzard, but there was not enough mana: " + currentMana + "/" + manaPool + ".\n");
             return;
         }
 
-        List<Enemy> enemiesInRange = board.getEnemiesInRange(this.position.x, this.position.y, abilityRange);
+        List<Enemy> enemiesInRange = board.getEnemiesInRange(this, abilityRange);
         if (enemiesInRange.isEmpty()) {
-            System.out.println(getName() + " cannot cast Blizzard, no enemies in range.");
+            if (messageCallback != null)
+                messageCallback.send(getName() + " tried to cast Blizzard, but there were no enemies in range.\n");
             return;
         }
 
         currentMana -= manaCost;
-        Random random = new Random();
-        int actualHits = Math.min(hitsCount, enemiesInRange.size()); // Don't hit more than available enemies
+        messageCallback.send(getName() + " cast Blizzard.\n");
 
-        System.out.println(getName() + " cast Blizzard, hitting " + actualHits + " enemies.");
-        for (int i = 0; i < actualHits; i++) {
-            Enemy target = enemiesInRange.get(random.nextInt(enemiesInRange.size()));
-            target.health.increaseHealth(spellPower);
-            System.out.println("  " + target.getName() + " took " + spellPower + " damage.");
-
-            if (!target.health.isAlive()) {
-                board.removeUnit(target);
-                gainExperience(target.getExperienceValue());
-                System.out.println("  " + getName() + " defeated " + target.getName() + " and gained " + target.getExperienceValue() + " experience.");
-            }
+        int hits = 0;
+        while(hits < hitsCount && !board.getEnemiesInRange(this, abilityRange).isEmpty()){
+            List<Enemy> currentTargets = board.getEnemiesInRange(this, abilityRange);
+            Random random = new Random();
+            Enemy target = currentTargets.get(random.nextInt(currentTargets.size()));
+            super.castAbility(board, List.of(target), this.spellPower);
+            hits++;
         }
     }
 
     @Override
-    public void processTurn(GameBoard board) {
-        currentMana = Math.min(manaPool, currentMana + (1 * level));
+    public void ProcessTurn(GameBoard board) {
+        super.ProcessTurn(board);
+        currentMana = Math.min(manaPool, currentMana + level);
     }
 
     @Override
     public String description() {
-        return super.description() + String.format("\t\tMana: %d/%d\t\tSpell Power: %d\t\tAbility Range: %d",
-                currentMana, manaPool, spellPower, abilityRange);
+        return super.description() + String.format("\t\tMana: %d/%d\t\tSpell Power: %d",
+                currentMana, manaPool, spellPower);
     }
+
+    public int getManaPool(){ return this.manaPool; }
 }

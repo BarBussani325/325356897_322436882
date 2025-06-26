@@ -1,17 +1,21 @@
 package units;
 
 import game.Health;
+import interfaces.MessageCallback;
 import interfaces.Visitor;
 import tiles.Empty;
 import tiles.Tile;
 import game.GameBoard; // Assuming you'll have a GameBoard class
 import tiles.Wall;
 
+import java.util.Random;
+
 public abstract class Unit extends Tile implements Visitor {
     protected String name;
     protected Health health;
     protected int attackPoints;
     protected int defensePoints;
+    protected MessageCallback messageCallback;
 
     protected Unit(char character, String name, int healthPool, int attackPoints, int defensePoints, int x, int y) {
         super(character, x, y);
@@ -19,6 +23,10 @@ public abstract class Unit extends Tile implements Visitor {
         this.health = new Health(healthPool);
         this.attackPoints = attackPoints;
         this.defensePoints = defensePoints;
+    }
+
+    public void setMessageCallback(MessageCallback callback) {
+        this.messageCallback = callback;
     }
 
     public String getName() {
@@ -43,26 +51,38 @@ public abstract class Unit extends Tile implements Visitor {
 
     public boolean isAlive(){return this.health.isAlive();}
 
-    public abstract String description();
-
-
-    public void encounter(Tile tile){
-        tile.accept(this);
+    public void attack(GameBoard board, Unit attacked) {
+        board.sendMessage(name + " engaged in combat with " +  attacked.name + ".\n");
+        board.sendMessage(description() + "\n");
+        board.sendMessage(attacked.description()+ "\n");
+        Random random = new Random();
+        int attackRoll = random.nextInt(attackPoints + 1);
+        int defenseRoll = random.nextInt(attacked.defensePoints + 1);
+        int damage = Math.max(0, attackRoll - defenseRoll);
+        attacked.takeDamage(damage);
+        messageCallback.send(String.format("%s rolled %d attack points.\n%s rolled %d defence points.\n%s dealt %d damage to %s.\n",
+                name ,attackRoll, attacked.getName(), defenseRoll, name, damage, attacked.getName()));
     }
 
-    public abstract void visit(Empty empty);
-    public abstract void visit(Wall wall);
-    public abstract void visit(Player player);
-    public abstract void visit(Enemy enemy);
+    public String description(){
+        return String.format("%s\t\tHealth: %d/%d\t\tAttack: %d\t\tDefense: %d",
+                name, health.getHealthAmount(), health.getHealthPool(), attackPoints, defensePoints);
+    }
 
+    public void encounter(Tile tile, GameBoard board){
+        tile.accept(this, board);
+    }
 
-//    // Visitor pattern methods for interaction
-//    public abstract void accept(Unit unit); // For unit attacking unit
-//    public abstract void accept(Player player); // For unit interacting with player
-//    public abstract void accept(Enemy enemy); // For unit interacting with enemy
-//    public abstract void accept(Empty empty); // For unit moving to empty tile
-//    public abstract void accept(Wall wall); // For unit trying to move into wall
+    public void takeDamage(int damage){
+        this.health.decreaseHealth(damage);
+    }
 
-    // Abstract method for unit turn logic (movement/abilities)
-    public abstract void processTurn(GameBoard board);
+    public abstract void visit(Empty empty, GameBoard board);
+    public abstract void visit(Wall wall, GameBoard board);
+    public abstract void visit(Player player, GameBoard board);
+    public abstract void visit(Enemy enemy, GameBoard board);
+
+    public abstract void ProcessTurn(GameBoard board);
+
+    public abstract void onDeath(GameBoard board, Unit unit);
 }

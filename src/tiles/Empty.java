@@ -4,6 +4,7 @@ import interfaces.Visitor;
 import units.Enemy;
 import units.Player;
 import units.Unit;
+import game.GameBoard;
 
 public class Empty extends Tile {
 
@@ -11,7 +12,7 @@ public class Empty extends Tile {
         super('.', x, y);
     }
 
-    public void accept(Visitor  v){
-        v.visit(this);    // Second dispatch -Calling back the receiver,  this time with the
+    public void accept(Visitor v, GameBoard board){
+        v.visit(this, board);
     }
 }

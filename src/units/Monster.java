@@ -17,7 +17,7 @@ public class Monster extends Enemy {
     }
 
     @Override
-    public void processTurn(GameBoard board) {
+    public void ProcessTurn(GameBoard board) {
         Player player = board.getPlayer();
         if (player == null) return; // Should not happen in a single-player game, but for safety
 
@@ -50,7 +50,7 @@ public class Monster extends Enemy {
         } else {
             // Random movement
             Random random = new Random();
-            int moveDirection = random.nextInt(5); // 0: Up, 1: Down, 2: Left, 3: Right, 4: Stay
+            int moveDirection = random.nextInt(5);
 
             int nextX = this.position.x;
             int nextY = this.position.y;

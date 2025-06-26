@@ -1,10 +1,12 @@
 package units;
 
 import game.GameBoard;
+
+import java.util.Arrays;
 import java.util.List;
 import java.util.Comparator;
 
-public class Hunter extends Player/*implements HeroicUnit */{
+public class Hunter extends Player{
     private int range; // Shooting range
     private int arrowsCount;
     private int ticksCount;
@@ -12,28 +14,30 @@ public class Hunter extends Player/*implements HeroicUnit */{
     public Hunter(String name, int healthPool, int attackPoints, int defensePoints, int range, int x, int y) {
         super(name, healthPool, attackPoints, defensePoints, x, y);
         this.range = range;
-        this.arrowsCount = 10 * level; // Starting arrows based on initial level
+        this.arrowsCount = 10 * level;
         this.ticksCount = 0;
     }
 
     @Override
-    public void levelUp() {
-        super.levelUp();
+    public String applyLevelUpBonuses() {
         this.arrowsCount += (10 * this.level);
         this.attackPoints += (2 * this.level);
-        this.defensePoints += (1 * this.level);
+        this.defensePoints +=  this.level;
+        return "";
     }
 
-    @Override
-    public void castAbility(GameBoard board) {
+
+    public void OnCastAbility(GameBoard board) {
         if (arrowsCount == 0) {
-            System.out.println(getName() + " cannot cast Shoot, no arrows left.");
+            if (messageCallback != null)
+                messageCallback.send(getName() + " cannot cast Shoot, no arrows left.\n");
             return;
         }
 
-        List<Enemy> enemiesInRange = board.getEnemiesInRange(this.position.x, this.position.y, range);
+        List<Enemy> enemiesInRange = board.getEnemiesInRange(this, range);
         if (enemiesInRange.isEmpty()) {
-            System.out.println(getName() + " cannot cast Shoot, no enemies in range.");
+            if (messageCallback != null)
+                messageCallback.send(getName() + " tried to shoot an arrow but there were no enemies in range.\n");
             return;
         }
 
@@ -43,29 +47,28 @@ public class Hunter extends Player/*implements HeroicUnit */{
                 .orElse(null);
 
         if (closestEnemy == null) {
-            System.out.println(getName() + " cannot cast Shoot, no enemies in range.");
+            if (messageCallback != null)
+                messageCallback.send(getName() + " cannot cast Shoot, no enemies in range.\n");
             return;
         }
 
         arrowsCount--;
-        closestEnemy.health.increaseHealth(attackPoints);
-        System.out.println(getName() + " shot " + closestEnemy.getName() + " for " + attackPoints + " damage.");
-
-        if (!closestEnemy.health.isAlive()) {
-            board.removeUnit(closestEnemy);
-            gainExperience(closestEnemy.getExperienceValue());
-            System.out.println(getName() + " defeated " + closestEnemy.getName() + " and gained " + closestEnemy.getExperienceValue() + " experience.");
-        }
+        if (messageCallback != null)
+            messageCallback.send(getName() + " fired an arrow at " + closestEnemy.getName()+".\n");
+        List<Enemy> targetList = Arrays.asList(closestEnemy);
+        super.castAbility(board,targetList,attackPoints);
     }
 
+
     @Override
-    public void processTurn(GameBoard board) {
-        ticksCount++;
+    public void ProcessTurn(GameBoard board) {
+        super.ProcessTurn(board);
         if (ticksCount == 10) {
             arrowsCount += level;
             ticksCount = 0;
-            System.out.println(getName() + " regenerated " + level + " arrow(s). Current arrows: " + arrowsCount);
         }
+        else
+            ticksCount++;
     }
 
     @Override
@@ -75,4 +78,7 @@ public class Hunter extends Player/*implements HeroicUnit */{
     }
 
 
+    public int getArrowsCount() {
+        return arrowsCount;
+    }
 }

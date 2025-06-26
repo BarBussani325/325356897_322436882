@@ -1,5 +1,8 @@
 package game;
 
+import tiles.Empty;
+import units.Unit;
+
 public class Position {
     public int x;
     public int y;
@@ -29,4 +32,6 @@ public class Position {
     public int hashCode() {
         return java.util.Objects.hash(x, y);
     }
+
+
 }

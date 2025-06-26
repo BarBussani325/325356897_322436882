@@ -25,6 +25,10 @@ public class Health {
         healthAmount = Math.min(healthPool, healthAmount + amount);
     }
 
+    public void SetHealthAmount(int amount) {
+         healthAmount = amount;
+    }
+
     public void decreaseHealth(int amount) {
         if (amount < 0) return;
         healthAmount = Math.max(0, healthAmount - amount);

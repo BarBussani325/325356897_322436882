@@ -22,28 +22,18 @@ public class Trap extends Enemy {
     }
 
     @Override
-    public void processTurn(GameBoard board) {
-        ticksCount++;
-        if (visible) {
-            if (ticksCount == visibilityTime) {
-                visible = false;
-                ticksCount = 0;
-                // Character should change to '.' when invisible, but the object itself stays in place
-                // This means the 'character' field of the Tile base class should be dynamic or overridden
-                // For now, let's just change the character for display
-                super.character = '.'; // Temporarily change character for display
-            }
-        } else { // Invisible
-            if (ticksCount == invisibilityTime) {
-                visible = true;
-                ticksCount = 0;
-                super.character = character; // Revert to original character
-            }
-        }
-
+    public void ProcessTurn(GameBoard board) {
+        visible = ticksCount < visibilityTime;
+        if(ticksCount == visibilityTime + invisibilityTime)
+            ticksCount = 0;
+        else
+            ticksCount ++;
         Player player = board.getPlayer();
-        if (player != null && board.getDistance(this, player) < 2) { // range < 2
-            attack(player);
+        if (player != null && board.getDistance(this, player) < 2) {
+            this.attack(board, player);
+        }
+        if (!player.isAlive()) {
+            player.onDeath(board, this);
         }
     }
 

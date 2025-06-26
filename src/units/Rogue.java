@@ -7,7 +7,7 @@ import units.Player;
 
 import java.util.List;
 
-public class Rogue extends Player/*implements HeroicUnit*/ {
+public class Rogue extends Player {
     private int cost; // Energy cost for Fan of Knives
     private int currentEnergy;
 
@@ -18,47 +18,41 @@ public class Rogue extends Player/*implements HeroicUnit*/ {
     }
 
     @Override
-    public void levelUp() {
-        super.levelUp();
+    public String applyLevelUpBonuses() {
         this.currentEnergy = 100; // Reset energy on level up
         this.attackPoints += (3 * this.level);
+        return "";
     }
 
-//    @Override
-//    public void castAbility(GameBoard board) {
-//        if (currentEnergy < cost) {
-//            System.out.println(getName() + " cannot cast Fan of Knives, not enough energy. Current energy: " + currentEnergy + ".");
-//            return;
-//        }
-//
-//        List<Enemy> enemiesInRange = board.getEnemiesInRange(this.position.x, this.position.y, 2); // Range < 2 (so 0, 1)
-//        if (enemiesInRange.isEmpty()) {
-//            System.out.println(getName() + " cannot cast Fan of Knives, no enemies in range.");
-//            return;
-//        }
-//
-//        currentEnergy -= cost;
-//        System.out.println(getName() + " cast Fan of Knives!");
-//        for (Enemy enemy : enemiesInRange) {
-//            enemy.health.decreaseHealth(attackPoints); // Damage equals rogue's attack points
-//            System.out.println("  " + enemy.getName() + " took " + attackPoints + " damage.");
-//
-//            if (!enemy.health.isAlive()) {
-//                board.removeUnit(enemy);
-//                gainExperience(enemy.getExperienceValue());
-//                System.out.println("  " + getName() + " defeated " + enemy.getName() + " and gained " + enemy.getExperienceValue() + " experience.");
-//            }
-//        }
-//    }
+    public void OnCastAbility(GameBoard board) {
+        if (currentEnergy < cost) {
+            if(messageCallback != null) messageCallback.send(getName() + " tried to cast Fan of Knives, but there was not enough energy: " + currentEnergy + ".\n");
+            return;
+        }
+
+        List<Enemy> enemiesInRange = board.getEnemiesInRange(this, 2); // Range < 2 (so 0, 1)
+        if (enemiesInRange.isEmpty()) {
+            if(messageCallback != null) messageCallback.send(getName() + " tried to cast Fan of Knives, but there were no enemies in range.\n");
+            return;
+        }
+        
+        currentEnergy -= cost;
+        if(messageCallback != null)
+            messageCallback.send(getName() + " cast Fan of Knives.\n");
+
+        super.castAbility(board, enemiesInRange, attackPoints);
+
+    }
 
     @Override
-    public void processTurn(GameBoard board) {
+    public void ProcessTurn(GameBoard board) {
+        super.ProcessTurn(board);
         currentEnergy = Math.min(currentEnergy + 10, 100);
     }
 
     @Override
     public String description() {
-        return super.description() + String.format("\t\tEnergy: %d/%d\t\tAbility Cost: %d",
-                currentEnergy, 100, cost);
+        return super.description() + String.format("\t\tEnergy: %d/%d",
+                currentEnergy, 100);
     }
 }
