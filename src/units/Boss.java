@@ -2,6 +2,7 @@ package units;
 
 import game.GameBoard;
 import interfaces.HeroicUnit;
+import interfaces.MessageCallback;
 import tiles.Empty;
 import tiles.Wall;
 
@@ -39,7 +40,7 @@ public class Boss extends Enemy implements HeroicUnit {
             message += String.format("%s hit %s for %d ability damage.\n",
                     this.getName(), player.getName(), damage);
 
-            board.sendMessage(message);
+            messageCallback.send(message);
 
             if (!player.isAlive()) {
                 player.onDeath(board, this);
@@ -57,72 +58,12 @@ public class Boss extends Enemy implements HeroicUnit {
                 castAbility(board);
             } else {
                 combatTicks++;
-                chasePlayer(board, player);
+                super.chasePlayer(board, player);
             }
         } else {
             combatTicks = 0;
-            performRandomMovement(board);
+            super.performRandomMovement(board);
         }
-    }
-
-
-    private void chasePlayer(GameBoard board, Player player) {
-        int dx = this.getX() - player.getX();
-        int dy = this.getY() - player.getY();
-
-        int newX = this.getX();
-        int newY = this.getY();
-
-        if (Math.abs(dx) > Math.abs(dy)) {
-            if (dx > 0) {
-                newX = this.getX() - 1; // Move left
-            } else {
-                newX = this.getX() + 1; // Move right
-            }
-        } else {
-            if (dy > 0) {
-                newY = this.getY() - 1; // Move up
-            } else {
-                newY = this.getY() + 1; // Move down
-            }
-        }
-
-        board.tryMoveUnit(this, newX, newY);
-    }
-
-    private void performRandomMovement(GameBoard board) {
-        Random random = new Random();
-        int direction = random.nextInt(5); // 0-4, where 4 means stay in place
-
-        int newX = this.getX();
-        int newY = this.getY();
-
-        switch (direction) {
-            case 0: // Move up
-                newY = this.getY() - 1;
-                break;
-            case 1: // Move down
-                newY = this.getY() + 1;
-                break;
-            case 2: // Move left
-                newX = this.getX() - 1;
-                break;
-            case 3: // Move right
-                newX = this.getX() + 1;
-                break;
-            case 4: // Stay in place
-                return;
-        }
-
-        board.tryMoveUnit(this, newX, newY);
-    }
-
-    public int getVisionRange() {
-        return visionRange;
-    }
-
-    public int getAbilityFrequency() {
-        return abilityFrequency;
     }
 
     public int getCombatTicks() {

@@ -41,7 +41,6 @@ public class Rogue extends Player {
             messageCallback.send(getName() + " cast Fan of Knives.\n");
 
         super.castAbility(board, enemiesInRange, attackPoints);
-
     }
 
     @Override

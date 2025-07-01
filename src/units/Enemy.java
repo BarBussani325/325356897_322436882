@@ -59,6 +59,58 @@ public abstract class Enemy extends Unit {
         board.removeEnemy(this);
     }
 
+    public void performRandomMovement(GameBoard board) {
+        Random random = new Random();
+        int direction = random.nextInt(5); // 0-4, where 4 means stay in place
+
+        int newX = this.getX();
+        int newY = this.getY();
+
+        switch (direction) {
+            case 0: // Move up
+                newY = this.getY() - 1;
+                break;
+            case 1: // Move down
+                newY = this.getY() + 1;
+                break;
+            case 2: // Move left
+                newX = this.getX() - 1;
+                break;
+            case 3: // Move right
+                newX = this.getX() + 1;
+                break;
+            case 4: // Stay in place
+                return;
+        }
+
+        board.tryMoveUnit(this, newX, newY);
+    }
+
+
+    public void chasePlayer(GameBoard board, Player player) {
+        int dx = this.getX() - player.getX();
+        int dy = this.getY() - player.getY();
+
+        int newX = this.getX();
+        int newY = this.getY();
+
+        if (Math.abs(dx) > Math.abs(dy)) {
+            if (dx > 0) {
+                newX = this.getX() - 1; // Move left
+            } else {
+                newX = this.getX() + 1; // Move right
+            }
+        } else {
+            if (dy > 0) {
+                newY = this.getY() - 1; // Move up
+            } else {
+                newY = this.getY() + 1; // Move down
+            }
+        }
+
+        board.tryMoveUnit(this, newX, newY);
+    }
+
 
 
 }

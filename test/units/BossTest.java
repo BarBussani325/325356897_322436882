@@ -21,14 +21,9 @@ public class BossTest {
     public void setUp() {
         callback = new TestMessageCallback();
         board = new GameBoard(callback);
-
-        // קונסטרקטור של Warrior דורש גם x ו־y
         player = new Warrior("Jon Snow", 1000, 150, 100, 5, 5, 5);
         player.setPosition(5, 5);
-
-        // Boss מקבל x, y, visionRange, abilityFrequency
         boss = new Boss('B', "The Mountain", 300, 80, 40, 100, 5, 7, 3, 3);
-
         board.loadLevel(generateEmptyLevel(10, 10), player);
         board.getEnemies().add(boss);
         board.swapPositions(boss, 5, 7);

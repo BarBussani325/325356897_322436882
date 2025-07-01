@@ -1,5 +1,6 @@
 package units;
 import game.GameBoard;
+import interfaces.HeroicUnit;
 import interfaces.InputProvider;
 import interfaces.Visitor;
 import tiles.Empty;
