@@ -21,6 +21,10 @@ public class GameBoard {
         this.enemies = new ArrayList<>();
         this.messageCallback = callback;
     }
+    public void addEnemy(Enemy enemy) {
+        enemies.add(enemy);
+        board[enemy.getY()][enemy.getX()] = enemy;
+    }
 
     public void loadLevel(List<String> levelData, Player selectedPlayer) {
         this.rows = levelData.size();

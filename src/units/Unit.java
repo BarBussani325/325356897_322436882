@@ -60,8 +60,21 @@ public abstract class Unit extends Tile implements Visitor {
         int defenseRoll = random.nextInt(attacked.defensePoints + 1);
         int damage = Math.max(0, attackRoll - defenseRoll);
         attacked.takeDamage(damage);
-        messageCallback.send(String.format("%s rolled %d attack points.\n%s rolled %d defence points.\n%s dealt %d damage to %s.\n",
-                name ,attackRoll, attacked.getName(), defenseRoll, name, damage, attacked.getName()));
+        //     messageCallback.send(String.format("%s rolled %d attack points.\n%s rolled %d defence points.\n%s dealt %d damage to %s.\n",
+        //      name ,attackRoll, attacked.getName(), defenseRoll, name, damage, attacked.getName()));
+        sendMessage(board, String.format("%s rolled %d attack points.\n%s rolled %d defence points.\n%s dealt %d damage to %s.\n",
+                name, attackRoll, attacked.getName(), defenseRoll, name, damage, attacked.getName()));
+    }
+
+    // Helper method to handle message sending consistently
+    private void sendMessage(GameBoard board, String message) {
+        if (messageCallback != null) {
+            messageCallback.send(message);
+        }
+        // Also send through board if it has a different message system
+        if (board != null) {
+            board.sendMessage(message);
+        }
     }
 
     public String description(){
